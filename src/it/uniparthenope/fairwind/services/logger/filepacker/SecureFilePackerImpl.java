@@ -50,7 +50,6 @@ public class SecureFilePackerImpl implements SecureFilePacker {
                 reader.close();
 
                 if (dataAsString != null && dataAsString.isEmpty() == false) {
-                    final int BUFFER = 2048;
 
                     // New TLS layer for encryption and digital signature
                     TLS tls = new TLS(publicKey, privateKey);

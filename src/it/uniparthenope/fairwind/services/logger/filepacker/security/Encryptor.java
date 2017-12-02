@@ -21,10 +21,11 @@ public class Encryptor {
     private IvParameterSpec IV;
     private SecretKey AESkey;
 
-    private final static String RSA = "RSA";
-    private final static String AES = "AES/CBC/PKCS5Padding";
+    private final static String RSA = "RSA/None/OAEPWithSHA1AndMGF1Padding";    //OAEP padding more secure than PKCS1
+    private final static String AES = "AES/CBC/PKCS5Padding";   //AES with CBC and PKCS5 padding
+    private final static String provider = "BC";
 
-    public Encryptor(PublicKey RSAPublickey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
+    public Encryptor(PublicKey RSAPublickey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, UnsupportedEncodingException, NoSuchProviderException {
         // generate RSA key
         RSAKey = RSAPublickey;
 
@@ -41,7 +42,7 @@ public class Encryptor {
         IV = new IvParameterSpec(iv);
 
         // RSA cipher
-        RSACipher = Cipher.getInstance(RSA);
+        RSACipher = Cipher.getInstance(RSA,provider);
         RSACipher.init(Cipher.ENCRYPT_MODE, RSAKey);
 
         // AES cipher

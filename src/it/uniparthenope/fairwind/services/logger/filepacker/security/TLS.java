@@ -20,13 +20,14 @@ public class TLS {
     private Encryptor encryptor;
     private DigitalSigner digitalSigner;
 
-    public TLS(String destPublicKey, String srcPrivateKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, UnsupportedEncodingException, InvalidKeyException {
+    public TLS(String destPublicKey, String srcPrivateKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, UnsupportedEncodingException, InvalidKeyException, NoSuchProviderException {
         // get publicKey from string
         PublicKey destPBK = stringToPublicKey(destPublicKey);
 
         // get privateKey from string
         PrivateKey srcPRK = stringToPrivateKey(srcPrivateKey);
 
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         encryptor = new Encryptor(destPBK);
         digitalSigner = new DigitalSigner(srcPRK);
     }

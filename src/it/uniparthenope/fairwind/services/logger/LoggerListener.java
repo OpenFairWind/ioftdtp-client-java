@@ -63,7 +63,7 @@ public class LoggerListener extends DataListener implements Runnable {
         String apiUrl="http://0.0.0.0:5057";
 
         // GET PUBLIC KEY FROM SERVER
-        RSAKeysGenerator rkg = new RSAKeysGenerator("RSA",1024);
+        RSAKeysGenerator rkg = new RSAKeysGenerator(1024);
         String sourcePublicKey = rkg.getPublicKey();
         String sourcePrivateKey = rkg.getPrivateKey();
 

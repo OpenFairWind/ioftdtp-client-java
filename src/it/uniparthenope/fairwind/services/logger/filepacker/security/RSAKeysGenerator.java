@@ -10,9 +10,10 @@ public class RSAKeysGenerator {
 
     private PrivateKey privateKey;
     private PublicKey publicKey;
+    private final static String RSA = "RSA/None/OAEPWithSHA1AndMGF1Padding";
 
-    public RSAKeysGenerator(String type, int size) throws NoSuchAlgorithmException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(type);
+    public RSAKeysGenerator(int size) throws NoSuchAlgorithmException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(RSA);
         kpg.initialize(size);
         KeyPair kp = kpg.generateKeyPair();
         publicKey = kp.getPublic();
