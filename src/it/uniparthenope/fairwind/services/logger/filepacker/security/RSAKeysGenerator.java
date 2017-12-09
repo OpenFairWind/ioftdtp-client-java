@@ -1,5 +1,6 @@
 package it.uniparthenope.fairwind.services.logger.filepacker.security;
 
+import java.io.*;
 import java.security.*;
 import java.util.Base64;
 
@@ -8,37 +9,47 @@ import java.util.Base64;
  */
 public class RSAKeysGenerator {
 
-    private PrivateKey privateKey;
-    private PublicKey publicKey;
-    private final static String RSA = "RSA/None/OAEPWithSHA1AndMGF1Padding";
+    private String privateKey;
+    private String publicKey;
 
-    public RSAKeysGenerator(int size) throws NoSuchAlgorithmException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(RSA);
-        kpg.initialize(size);
-        KeyPair kp = kpg.generateKeyPair();
-        publicKey = kp.getPublic();
-        privateKey = kp.getPrivate();
+    public RSAKeysGenerator(String prkPath, String pbkPath, int size) throws NoSuchAlgorithmException, IOException {
+        File prkf = new File(prkPath); File pbkf = new File(pbkPath);
 
-        //storeKey(prvk,"/Users/mario/IdeaProjects/SignalKLogger/keys/private_key.txt");
-        //storeKey(pubk,"/Users/mario/IdeaProjects/SignalKLogger/keys/public_key.txt");
+        // if keys don't exist
+        if ( !prkf.exists() || !pbkf.exists() ) {
+            System.out.println("Generating the key pair...");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(size);
+            KeyPair kp = kpg.generateKeyPair();
+
+            publicKey = keyToString(kp.getPublic());
+            privateKey = keyToString(kp.getPrivate());
+
+            storeKey(privateKey,prkf);
+            storeKey(publicKey,pbkf);
+        }
+        else {  //else get them from files
+            System.out.println("Getting keys from existing files...");
+            FileReader fr = new FileReader(prkf);
+            BufferedReader br = new BufferedReader(fr);
+            privateKey = br.readLine();
+
+            fr = new FileReader(pbkf);
+            br = new BufferedReader(fr);
+            publicKey = br.readLine();
+        }
     }
 
     public String getPrivateKey() {
-        return keyToString(privateKey);
+        return privateKey;
     }
 
     public String getPublicKey() {
-        return keyToString(publicKey);
+        return publicKey;
     }
 
-    private String keyToString(Key key){
-        return Base64.getEncoder().encodeToString(key.getEncoded());
-    }
-
-    /*
-    private static void storeKey(Key key, String path) throws IOException {
-        String keystring = keyToString(key);
-        PrintWriter pw = new PrintWriter(new File(path));
+    private static void storeKey(String keystring, File f) throws IOException {
+        PrintWriter pw = new PrintWriter(f);
         pw.write(keystring);
         pw.close();
     }
@@ -46,6 +57,5 @@ public class RSAKeysGenerator {
     private static String keyToString(Key key){
         return Base64.getEncoder().encodeToString(key.getEncoded());
     }
-    */
 
 }
