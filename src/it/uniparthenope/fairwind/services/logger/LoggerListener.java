@@ -42,6 +42,9 @@ public class LoggerListener extends DataListener implements Runnable {
     private long lastCutMillis=lastFullMillis;
     private long lastUpdateMillis=lastFullMillis;
     private String currentFilename="";
+    private static final String prkPath = "HERE_PATH_TO_PRIVATE_KEY";
+    private static final String pbkPath = "HERE_PATH_TO_PUBLIC_KEY";
+    private static final int rsaKeySize = 1024;
 
     private HashSet<String> pathEvents=new HashSet<String>();   //events cache in Algorithm 1 on the paper
 
@@ -63,7 +66,7 @@ public class LoggerListener extends DataListener implements Runnable {
         String apiUrl="http://0.0.0.0:5057";
 
         // GET PUBLIC KEY FROM SERVER
-        RSAKeysGenerator rkg = new RSAKeysGenerator(1024);
+        RSAKeysGenerator rkg = new RSAKeysGenerator(prkPath, pbkPath, rsaKeySize);
         String sourcePublicKey = rkg.getPublicKey();
         String sourcePrivateKey = rkg.getPrivateKey();
 
