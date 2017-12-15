@@ -129,6 +129,7 @@ public class SignalkWebSocketClient extends DataListener {
                                     String self = t.at("self").asString();
                                     Log.d(LOG_TAG,"Socket:"+name+"("+version+")");
 
+                                    /*
                                     if (self.equals(SignalKConstants.self)==false) {
 
                                         for (Json role : roles) {
@@ -148,6 +149,7 @@ public class SignalkWebSocketClient extends DataListener {
                                         }
                                         //Toast.makeText(FairWindApplication.getInstance(),name+"("+version+")",Toast.LENGTH_LONG).show();
                                     }
+                                    */
                                 }
                             }
                         } catch (Exception e) {
