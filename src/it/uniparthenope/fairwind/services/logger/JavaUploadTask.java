@@ -4,8 +4,12 @@ import it.uniparthenope.fairwind.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * Created by marioruggieri on 11/10/2017.
@@ -19,9 +23,32 @@ public class JavaUploadTask extends UploadTaskBase {
         super(httpClientClassName, uploadUrl, uploader);
     }
 
-    public void execute(File[] files) {
-        UploadTask uploadTask = new UploadTask(files);
-        uploadTask.start();
+    public boolean netIsAvailable() {
+        try {
+            Log.d(LOG_TAG,"Checking if network is available...");
+            final URL url = new URL("http://fairwind.cloud:5050");
+            final URLConnection conn = url.openConnection();
+            conn.connect();
+            return true;
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean execute(File[] files) {
+        if (files.length != 0) {
+            if (netIsAvailable()) {
+                UploadTask uploadTask = new UploadTask(files);
+                uploadTask.start();
+            }
+            else {
+                Log.d(LOG_TAG,"Network not available!");
+                return false; //false only if net is not available
+            }
+        }
+        return true;
     }
 
     private class UploadTask extends Thread {
@@ -35,9 +62,9 @@ public class JavaUploadTask extends UploadTaskBase {
         public void run() {
             for (File file : files) {
                 if (!isUploading(file.getAbsolutePath())) {
-                    putInUploading(file.getAbsolutePath());
                     Log.d(LOG_TAG, "Clients:" + getCurrentClients() + "/" + getAvailableClients());
                     if (getAvailableClients() - getCurrentClients() > 0) {
+                        putInUploading(file.getAbsolutePath());
                         Log.d("Upload:", "FileName:" + file.getName());
                         try {
                             // Get class from its name
@@ -46,7 +73,6 @@ public class JavaUploadTask extends UploadTaskBase {
                             Class<?> clazz = Class.forName(getHttpClientClassName());
                             Constructor<?> ctor = clazz.getConstructor(Uploader.class);
                             HttpClientBase client = (HttpClientBase)ctor.newInstance(getUploader()); //get concrete istance
-
                             try {
                                 client.post(getUploadUrl(), file);    //AsyncHttpClient generates a thread for each post
                             } catch (FileNotFoundException e) {
@@ -69,5 +95,3 @@ public class JavaUploadTask extends UploadTaskBase {
         }
     }
 }
-
-

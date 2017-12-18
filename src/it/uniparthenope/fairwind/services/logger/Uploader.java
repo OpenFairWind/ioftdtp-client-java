@@ -5,6 +5,9 @@ import it.uniparthenope.fairwind.services.logger.filepacker.SecureFilePacker;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,7 +88,7 @@ public class Uploader implements Runnable {
 
     public String getUploadPath() { return uploadPath; }
 
-    private boolean done;
+    private boolean done = false;
 
 
     public  void upload() {
@@ -97,13 +100,12 @@ public class Uploader implements Runnable {
         File[] files = folder.listFiles();
         if (files!=null) {
             Log.d(LOG_TAG, "Files to upload in " + uploadPath + ":" + files.length);
-            UploadTaskBase uploadTaskBase =new JavaUploadTask(httpClientClassName,uploadUrl,this);
-            uploadTaskBase.execute(files); // generates a thread for the upload task
-
+            UploadTaskBase uploadTaskBase = new JavaUploadTask(httpClientClassName, uploadUrl, this); // generates a thread for the upload task
+            if (!uploadTaskBase.execute(files)) {
+                fail();
+            }
         }
     }
-
-
 
     public void moveToUpload() {
 
@@ -121,12 +123,9 @@ public class Uploader implements Runnable {
 
         // Check if the current file have to be moved to the upload folder
         if (filePath!=null && filePath.isEmpty()==false) {
-
-
             File source = new File(filePath);
             File destination = new File(uploadPath);
             if (source.exists()) {
-
                 try {
                     secureFilePacker.pack(source, destination);
                 } catch (IOException ex) {
@@ -174,7 +173,7 @@ public class Uploader implements Runnable {
                 // Update the average speed each two cycles
                 if (currentTimeMillis-lastAverageSpeedUpdade>2*millis) {
                     // Update the average speed only if a transfer has been done in the last cycle
-                    if (currentTimeMillis-lastSpeedUpdate<millis) {
+                    if (currentTimeMillis-lastSpeedUpdate<=millis) {
                         // Update the average speed
                         averageSpeed = getSpeed();
                     } else {
@@ -195,6 +194,7 @@ public class Uploader implements Runnable {
             } catch (InterruptedException ex) {
                 Log.e(LOG_TAG,ex.getMessage());
             }
+            Log.d(LOG_TAG, "done value: " + done);
         }
     }
 
@@ -229,6 +229,7 @@ public class Uploader implements Runnable {
 
     public synchronized void put(String sessionId, HttpClientBase httpClient) {
         httpClients.put(sessionId,httpClient);
+        System.out.println("sessionId putted: " + sessionId);
     }
 
     public boolean isUploading(String filePath) {
@@ -257,17 +258,13 @@ public class Uploader implements Runnable {
     }
     */
 
-    public synchronized void remove(String sessionId) {
-        httpClients.remove(sessionId);
-
+    public synchronized void fail() {
         Log.d(LOG_TAG,"Running clients:"+getCurrentClients()+"/"+getAvailableClients());
-
-        Log.d(LOG_TAG, "UPLPERF MIL "+System.currentTimeMillis()+" FAL FCT "+getFileToTransferCount()+" ASP " + averageSpeed + " SPD " + getSpeed() + " NCL " + nClients + " ACL " + getAvailableClients() + " MCL " + maxClients + " NFAL " + nFailures);
-
+        Log.d(LOG_TAG, "UPLPERF MIL "+System.currentTimeMillis()+" FAL FCT "+getFileToTransferCount()+" ASP " + averageSpeed + " SPD " + getSpeed() + " NCL " + getCurrentClients() + " ACL " + getAvailableClients() + " MCL " + maxClients + " NFAL " + nFailures);
 
         nFailures++;
 
-        Log.d(LOG_TAG, "Failures:" + nClients);
+        Log.d(LOG_TAG, "Failures:" + nFailures);
         if (nFailures == nClients) {
             nFailures = 0;
             nClients--;
@@ -279,14 +276,19 @@ public class Uploader implements Runnable {
         }
     }
 
+    public synchronized void remove(String sessionId) {
+        System.out.println("sessionId to remove: " + sessionId);
+        httpClients.remove(sessionId);
+        fail();
+    }
+
     public synchronized void remove(String sessionId, File file) {
         HttpClientBase httpClient=httpClients.get(sessionId);
-        httpClients.remove(sessionId);
+        int currentClientNumber = httpClients.size();   //count number used for the transfer
+        httpClients.remove(sessionId);  // currentClientNumber computed before remove to count itself
         long timeStamp=httpClient.getTimeStamp();
         long fileSize=httpClient.getFile().length();
         long currentTimeMillis=System.currentTimeMillis();
-
-
 
         Float deltaSecs = (currentTimeMillis - timeStamp) / 1000.0f;
 
@@ -302,12 +304,12 @@ public class Uploader implements Runnable {
 
         Log.d(LOG_TAG, "Average Speed:" + averageSpeed + "  bytes sec-1. Speed:" + getSpeed() + " bytes sec-1");
 
-        Log.d(LOG_TAG, "UPLPERF MIL "+System.currentTimeMillis()+" SUC FCT "+getFileToTransferCount()+" ASP " + averageSpeed + " SPD " + getSpeed() + " NCL "+nClients+ " ACL "+getAvailableClients()+ " MCL "+maxClients+" NFAL "+nFailures);
+        Log.d(LOG_TAG, "UPLPERF MIL "+System.currentTimeMillis()+" SUC FCT "+getFileToTransferCount()+" ASP " + averageSpeed + " SPD " + getSpeed() + " SPR " + getSpeed()/averageSpeed + " NCL " + currentClientNumber + " ACL "+getAvailableClients()+ " MCL "+maxClients+" NFAL "+nFailures);
 
 
         if (Float.isNaN(averageSpeed) == false && averageSpeed > 0) {
             float speedRate = getSpeed() / averageSpeed;
-            //Log.d(LOG_TAG, "Speed rate:" + speedRate);
+            Log.d(LOG_TAG, "Speed rate:" + speedRate);
             nClients=calculateNumberOfClientsBySpeedRate(speedRate);
 
             if (nClients < 1) {
@@ -335,6 +337,7 @@ public class Uploader implements Runnable {
         } else if (speedRate < .95) {
             nClients = nClients + 1;
         }
+        Log.d(LOG_TAG, "NUMBER OF CLIENTS: " + nClients);
         return nClients;
     }
 

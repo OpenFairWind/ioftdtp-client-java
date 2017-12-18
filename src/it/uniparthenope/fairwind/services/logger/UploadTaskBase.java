@@ -1,13 +1,11 @@
 package it.uniparthenope.fairwind.services.logger;
 
 import java.io.File;
-import java.util.ArrayList;
 
 public abstract class UploadTaskBase {
     private String httpClientClassName;
     private String uploadUrl;
     private Uploader uploader;
-
 
     public UploadTaskBase(String httpClientClassName, String uploadUrl, Uploader uploader) {
         this.httpClientClassName=httpClientClassName;
@@ -21,7 +19,9 @@ public abstract class UploadTaskBase {
 
     public Uploader getUploader() { return uploader; }
 
-    public abstract void execute(File[] files);
+    public abstract boolean execute(File[] files);
+
+    public abstract boolean netIsAvailable();
 
     public boolean isUploading(String filePath) {
         return uploader.isUploading(filePath);
